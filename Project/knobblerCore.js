@@ -9,7 +9,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = void 0;
+exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.bkMap = void 0;
 var utils_1 = require("./utils");
 var consts_1 = require("./consts");
 var config_1 = require("./config");
@@ -17,6 +17,7 @@ var log = (0, utils_1.logFactory)(config_1.default);
 // slot arrays
 var paramObj = [];
 var paramNameObj = [];
+var automationStateObj = [];
 var deviceObj = [];
 var trackObj = [];
 var parentNameObj = [];
@@ -26,7 +27,6 @@ var outMin = [];
 var outMax = [];
 var deviceCheckerTask = [];
 // other vars
-var nullString = '- - -';
 var allowMapping = [];
 var allowUpdateFromOsc = [];
 function unmap(slot) {
@@ -50,6 +50,11 @@ function clearPath(slot) {
     refreshSlotUI(slot);
 }
 exports.clearPath = clearPath;
+function bkMap(slot, id) {
+    var api = new LiveAPI(consts_1.noFn, 'id ' + id);
+    setPath(slot, api.unquotedpath);
+}
+exports.bkMap = bkMap;
 function initAll() {
     for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
         initSlotIfNecessary(i);
@@ -66,7 +71,7 @@ function init(slot) {
     if (paramObj[slot]) {
         // clean up callbacks when unmapping
         paramObj[slot].id = 0;
-        outlet(consts_1.OUTLET_OSC, ['/valStr' + slot, nullString]);
+        outlet(consts_1.OUTLET_OSC, ['/valStr' + slot, consts_1.nullString]);
     }
     paramObj[slot] = null;
     allowMapping[slot] = true;
@@ -79,6 +84,7 @@ function init(slot) {
     };
     if (deviceCheckerTask[slot]) {
         deviceCheckerTask[slot].cancel();
+        deviceCheckerTask[slot].freepeer();
         deviceCheckerTask[slot] = null;
     }
     if (paramNameObj[slot]) {
@@ -153,7 +159,7 @@ function paramValueCallback(slot, iargs) {
     // This function is called whenever the parameter value changes,
     // either via OSC control or by changing the device directly.
     // We need to distinguish between the two and not do anything if the
-    // value was changed due to OSC input. Otherwise, since we would create a feedback
+    // value was changed due to OSC input. Otherwise, we would create a feedback
     // loop since this the purpose of this function is to update the displayed
     // value on the OSC controller to show automation or direct manipulation.
     // We accomplish this by keeping a timestamp of the last time OSC data was
@@ -178,6 +184,14 @@ function paramNameCallback(slot, iargs) {
     if (args[0] === 'name') {
         param[slot].name = args[1];
         sendParamName(slot);
+    }
+}
+function automationStateCallback(slot, iargs) {
+    //log(iargs)
+    var args = arrayfromargs(iargs);
+    //log('PARAM NAME CALLBACK ' + args.join(','))
+    if (args[0] === 'automation_state') {
+        sendAutomationState(slot);
     }
 }
 function deviceNameCallback(slot, iargs) {
@@ -207,24 +221,17 @@ function trackNameCallback(slot, iargs) {
         sendTrackName(slot);
     }
 }
-function colorToString(colorVal) {
-    var retString = parseInt(colorVal).toString(16).toUpperCase();
-    var strlen = retString.length;
-    for (var i = 0; i < 6 - strlen; i++) {
-        retString = '0' + retString;
-    }
-    return retString + 'FF';
-}
 function parentColorCallback(slot, iargs) {
     //log('PARENT COLOR CALLBACK')
     var args = arrayfromargs(iargs);
     //log('PARENTCOLOR', args)
     if (args[0] === 'color') {
-        param[slot].trackColor = colorToString(args[1]);
+        param[slot].trackColor = (0, utils_1.colorToString)(args[1]) + 'FF';
         sendColor(slot);
     }
 }
 function checkDevicePresent(slot) {
+    //log('CHECK_DEVICE_PRESENT ' + slot)
     if (deviceObj[slot] && !deviceObj[slot].unquotedpath) {
         //log(`slot=${slot} DEVICE DELETED`)
         init(slot);
@@ -246,30 +253,34 @@ function setPath(slot, paramPath) {
         //log(`skipping ${slot}: ${paramPath}`)
         return;
     }
-    var testObj = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
-    testObj.property = 'value';
+    var testParamObj = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
     // catch bad paths
-    if (testObj.id.toString() === '0') {
+    if (testParamObj.id === 0) {
         log("Invalid path for slot ".concat(slot, ": ").concat(paramPath));
         return;
     }
-    paramObj[slot] = testObj;
+    testParamObj.property = 'value';
+    paramObj[slot] = testParamObj;
     paramNameObj[slot] = new LiveAPI(function (iargs) { return paramNameCallback(slot, iargs); }, paramPath);
     paramNameObj[slot].property = 'name';
+    automationStateObj[slot] = new LiveAPI(function (iargs) { return automationStateCallback(slot, iargs); }, paramPath);
+    automationStateObj[slot].property = 'automation_state';
     param[slot].id = paramObj[slot].id;
     param[slot].path = paramObj[slot].unquotedpath;
     param[slot].val = parseFloat(paramObj[slot].get('value'));
     param[slot].min = parseFloat(paramObj[slot].get('min')) || 0;
     param[slot].max = parseFloat(paramObj[slot].get('max')) || 1;
     param[slot].name = paramObj[slot].get('name')[0];
-    deviceObj[slot] = new LiveAPI(function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot].get('canonical_parent'));
+    deviceObj[slot] = new LiveAPI(function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot] && paramObj[slot].get('canonical_parent'));
     var devicePath = deviceObj[slot].unquotedpath;
     // poll to see if the mapped device is still present
     if (deviceCheckerTask[slot] && deviceCheckerTask[slot].cancel) {
         deviceCheckerTask[slot].cancel();
+        deviceCheckerTask[slot].freepeer();
         deviceCheckerTask[slot] = null;
     }
     deviceCheckerTask[slot] = new Task(function () { return checkDevicePresent(slot); });
+    deviceCheckerTask[slot].interval = 1000; // every second
     deviceCheckerTask[slot].repeat(-1);
     // Only get the device name if it has the name property
     if (deviceObj[slot].info.match(/property name str/)) {
@@ -287,7 +298,8 @@ function setPath(slot, paramPath) {
     // parent color
     parentColorObj[slot] = new LiveAPI(function (iargs) { return parentColorCallback(slot, iargs); }, parentId);
     parentColorObj[slot].property = 'color';
-    param[slot].trackColor = colorToString(parentColorObj[slot].get('color'));
+    param[slot].trackColor =
+        (0, utils_1.colorToString)(parentColorObj[slot].get('color')) + 'FF';
     // Try to get the track name
     var matches = devicePath.match(/^live_set tracks \d+/) ||
         devicePath.match(/^live_set return_tracks \d+/) ||
@@ -310,7 +322,8 @@ function setPath(slot, paramPath) {
 }
 exports.setPath = setPath;
 function refresh() {
-    for (var i = 0; i < consts_1.MAX_SLOTS; i++) {
+    //log('IN REFRESH')
+    for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
         refreshSlotUI(i);
     }
 }
@@ -322,6 +335,7 @@ function refreshSlotUI(slot) {
 function sendNames(slot) {
     //log(param.name, param.deviceName, param.trackName)
     sendParamName(slot);
+    sendAutomationState(slot);
     sendDeviceName(slot);
     sendTrackName(slot);
     sendColor(slot);
@@ -330,17 +344,24 @@ function sendParamName(slot) {
     //log(`SEND PARAM NAME ${slot}`)
     initSlotIfNecessary(slot);
     var paramName = (0, utils_1.dequote)(((param[slot] && (param[slot].customName || param[slot].name)) ||
-        nullString).toString());
+        consts_1.nullString).toString());
     sendMsg(slot, ['param', paramName]);
     //log('SEND PARAM NAME ' + slot + '=' + paramName)
     outlet(consts_1.OUTLET_OSC, ['/param' + slot, paramName]);
+}
+function sendAutomationState(slot) {
+    initSlotIfNecessary(slot);
+    var automationState = parseInt((paramObj && paramObj[slot] && paramObj[slot].get('automation_state')) || 0);
+    var payload = ['/param' + slot + 'auto', automationState];
+    //log('PAYLOAD ' + JSON.stringify(payload))
+    outlet(consts_1.OUTLET_OSC, payload);
 }
 function sendDeviceName(slot) {
     //log(`SEND DEVICE NAME ${slot}`)
     initSlotIfNecessary(slot);
     var deviceName = param[slot].deviceName
         ? (0, utils_1.dequote)(param[slot].deviceName.toString())
-        : nullString;
+        : consts_1.nullString;
     sendMsg(slot, ['device', deviceName]);
     outlet(consts_1.OUTLET_OSC, ['/device' + slot, deviceName]);
 }
@@ -349,19 +370,19 @@ function sendTrackName(slot) {
     initSlotIfNecessary(slot);
     var trackName = param[slot].parentName
         ? (0, utils_1.dequote)(param[slot].parentName.toString())
-        : nullString;
+        : consts_1.nullString;
     sendMsg(slot, ['track', trackName]);
     outlet(consts_1.OUTLET_OSC, ['/track' + slot, trackName]);
 }
-var DEFAULT_RED = 'FF0000FF';
 function sendColor(slot) {
     //log(`SEND COLOR ${slot}`)
     initSlotIfNecessary(slot);
     var trackColor = param[slot].trackColor
         ? (0, utils_1.dequote)(param[slot].trackColor.toString())
-        : DEFAULT_RED;
+        : consts_1.DEFAULT_COLOR_FF;
     outlet(consts_1.OUTLET_OSC, ['/val' + slot + 'color', trackColor]);
-    if (trackColor === DEFAULT_RED) {
+    // for the color highlight in the Max for Live device
+    if (trackColor === consts_1.DEFAULT_COLOR_FF) {
         trackColor = '000000FF';
     }
     var red = parseInt(trackColor.substring(0, 2), 16) / 255.0 || 0;
@@ -374,13 +395,13 @@ function sendVal(slot) {
     //log(`SEND VAL ${slot}`)
     initSlotIfNecessary(slot);
     if (!paramObj[slot] ||
-        paramObj[slot].id.toString() === '0' ||
+        paramObj[slot].id === 0 ||
         param[slot].val === undefined ||
         param[slot].max === undefined ||
         param[slot].min === undefined ||
         outMax[slot] === outMin[slot]) {
         outlet(consts_1.OUTLET_OSC, ['/val' + slot, 0]);
-        outlet(consts_1.OUTLET_OSC, ['/valStr' + slot, nullString]);
+        outlet(consts_1.OUTLET_OSC, ['/valStr' + slot, consts_1.nullString]);
         return;
     }
     // the value, expressed as a proportion between the param min and max
@@ -396,13 +417,15 @@ function sendVal(slot) {
         '/valStr' + slot,
         paramObj[slot]
             ? paramObj[slot].call('str_for_value', param[slot].val)
-            : nullString,
+            : consts_1.nullString,
     ]);
 }
+// new value received over OSC
 function val(slot, val) {
     //log(slot + ' - VAL: ' + val)
     if (paramObj[slot]) {
         if (allowUpdateFromOsc[slot]) {
+            // scale the 0..1 value to the param's min/max range
             var scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot];
             param[slot].val =
                 (param[slot].max - param[slot].min) * scaledVal + param[slot].min;
@@ -414,6 +437,7 @@ function val(slot, val) {
                 });
                 (0, utils_1.debouncedTask)('allowUpdates', slot, allowUpdatesTask, 500);
             }
+            //log('VAL ' + paramObj[slot] + ' ' + param[slot].val)
             paramObj[slot].set('value', param[slot].val);
             outlet(consts_1.OUTLET_OSC, [
                 '/valStr' + slot,

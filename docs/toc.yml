@@ -1,0 +1,20 @@
+- fname: index.md
+  title: Main Page
+- fname: features.md
+  title: Feature Walkthrough
+- fname: setup.md
+  title: Setup
+- fname: troubleshooting.md
+  title: Troubleshooting
+- fname: multiple-tablets.md
+  title: Multiple Tablet Setup
+- fname: updating.md
+  title: Updating the Max for Live Device
+- fname: __sep__
+  title: ----------------Separator
+- fname: credits.md
+  title: Credits
+- fname: OSC-API.md
+  title: OSC-API
+- fname: wifi-adhoc.md
+  title: No WiFi?

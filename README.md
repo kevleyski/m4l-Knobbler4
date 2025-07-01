@@ -1,21 +1,51 @@
 # Knobbler4
 
-Knobbler4 turns your iPad into an auto-labeling, auto-coloring, multitouch parameter control surface for Ableton Live.
+Knobbler4 turns your phone or tablet into an auto-labeling, auto-coloring, multitouch parameter control surface for Ableton Live. Add the Knobbler4 device to the Main track in your Live Set and use your tablet or mobile device to control devices and parameters.
 
-![Knobbler4 in Action](images/external-with-hand.jpg)
+![Knobbler4 in Action](docs/images/overall.jpg)
 
-Map parameters in your Ableton Live set to unmapped sliders on the iPad with a single touch. No need to enter and exit a mapping mode. Access every parameter in the currently selected device, directly on the iPad.
+Map parameters in your Ableton Live set to unmapped sliders on the tablet with a single touch. No need to enter and exit a mapping mode. Access every parameter in the currently selected device, directly on the tablet.
 
 Parameter mapping configuration is saved with your Live Set, so you can switch between songs with minimal friction. Track, device, and parameter names are kept synchronized with your Live Set as you change them, even track colors!
 
-Parameter sliders and values are updated in real time, with the same units (e.g. dB, ms, %) displayed as what you see in Live. Double tap a slider on the iPad to reset the parameter to its default value.
+Parameter sliders and values are updated in real time, with the same units (e.g. dB, ms, %) displayed as what you see in Live. Double tap a slider on the tablet to reset the parameter to its default value.
 
-Also provides a high-resolution slider that operates on the currently selected parameter in your Live Set, and a Record-Enable toggle switch to improve the process of overdubbing automation.
+Quickly see and navigate around your tracks, groups, racks, chains, and devices with a touch.
+
+Swipe out a channel strip to adjust the mixer settings of the currently selected track.
 
 [Here is a playlist of videos featuring Knobbler4](https://www.youtube.com/playlist?list=PLqzTnRgmRId6cHDkhw_qqJL7dC67Qu440).
 
+## [Knobbler Documentation Site](https://plugins.steinkamp.us/m4l-Knobbler4)
+
 ## Changelog
 
+- 2025-06-25 [v36](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v36/Knobbler4-v36.amxd) - Knobbler is now an Audio Device! Add to your Main / Master track. This release also adds CurrentParamKnob functionality to support forthcoming tablet + phone app update.
+- 2025-05-26 [v35](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v35/Knobbler4-v35.amxd) - Support multiple tablets by allowing for multiple Knobbler device instances with their own unique receive ports; Fix some initialization bugs that may have crashed the Android app.
+- 2025-04-29 [v34](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v34/Knobbler4-v34.amxd) - Removed Clips view support. Reliability improvements.
+- 2025-04-20 [v33](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v33/Knobbler4-v33.amxd) - Clips view support (beta)
+- 2025-04-03 [v32](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v32/Knobbler4-v32.amxd) - Support for sending rack macro variations and rack macro randomize; Check for device version updates and alert with a "!!" icon.
+- 2025-03-16 [v31](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v31/Knobbler4-v31.amxd) - Make Knobbler resilient to "forgotten" devices such as CC Control. These devices do not adhere to Ableton's API standard and thus misbehave with Knobbler. I have contacted support@ableton about this.
+- 2025-03-05 [v30](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v30/Knobbler4-v30.amxd) - Auto-collapse racks when collapsing them in the nav; Allow the app page to be automated; Toggle track children display; Revamp setup page; Center Bluhand labels'
+- 2025-03-01 [v29](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v29/Knobbler4-v29.amxd) - Eliminate the control surface requirement! More reliable navigation display.
+- 2025-02-24 [v28](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v28/Knobbler4-v28.amxd) - Fix bug where grouped tracks would be displayed at the end of the track list in the nav. Thanks Andrew C for the bug report.
+- 2025-02-22 [v27](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v27/Knobbler4-v27.amxd) - Fix bug related to navigating in tracks without devices. First release without TouchOSC template. Long live TouchOSC! All in on Knobbler for iPad now.
+- 2025-02-19 [v26](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v26/Knobbler4-v26.zip) - ACTUALLY Fix bug related to adding/removing VST parameters - ended up nicely simplifying parameter logic in Bluhand.
+- 2025-02-19 [v25](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v25/Knobbler4-v25.zip) - Fix bug related to adding/removing VST parameters - ended up nicely simplifying parameter logic in Bluhand
+- 2025-02-18 [v24](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v24/Knobbler4-v24.zip) - Watch `has_audio_output` more closely to enable/disable mixer controls appropriately. Thanks Andrew Norris for the bug report! Check out Andrew's stuff at https://andrewnorris.uk/
+- 2025-02-16 [v23](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v23/Knobbler4-v23.zip) - Detect control surfaces and show a warning if not present (required for Bluhand); Overhaul refresh system to be snappier and not get lost; Fix bug in exclusive arm code that would try to arm un-armable tracks and generate a warning in the Max console.
+- 2025-02-14 [v22](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v22/Knobbler4-v22.zip) - Support exclusive arm/solo
+- 2025-02-13 ~~[v21](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v21/Knobbler4-v21.zip) - Support channel mixer view in the native app; Direct mapping from Bluhand to Knobbler; Move more nav logic from the ipad app into the device for better performance and reliability; Imported Ableton's device parameter bank definitions from control scripts.~~
+- 2025-02-05 [v20](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v20/Knobbler4-v20.zip) - Handle collapsed tracks, stability improvements; ability to just refresh menu data.
+- 2025-02-03 [v19](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v19/Knobbler4-v19.zip) - Support device on/off; Pass device and rack types to native app; Cache device name lookups for Bluhand banks; Cache parent colors.
+- 2025-02-01 [v18](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v18/Knobbler4-v18.zip) - Adds automation state and enabled/disabled (green circle / greyed out) where appropriate; Make rack macro knobs share the layout they have on screen (two rows evenly divided).
+- 2025-01-29 [v17](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v17/Knobbler4-v17.zip) - Adds session record button state; Adds the Main channel to the Bluhand channel list.
+- 2025-01-26 [v16](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v16/Knobbler4-v16.zip) - More functionality for the native iPad app around browsing tracks and devices in your set, metronome toggle, tap tempo button, tempo text input. Limits macro sliders in Bluhand to the number of visible macros.
+- 2025-01-22 [v15](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v15/Knobbler4-v15.zip) - Adds functionality around play, stop, record, MIDI Overdub, Re-Enable Automation, Capture MIDI, Toggle Input Enable, Marker prev/next navigation, and Loop. This is all in support of the native iPad app.
+- 2025-01-21 [v14](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v14/Knobbler4-v14.zip) - Fixes a critical bug in v13 that prevented Knobbler knob mapping from working.
+- 2025-01-20 v13 - Support features in the native iPad app: Bank buttons, track/device navigation buttons (DOWNLOAD DISABLED - BUGFIX IN v14 ABOVE)
+- 2025-01-12 [v12](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v12/Knobbler4-v12.zip) - New more compact tabbed UI; Bluhand device presets now in the UI; Fix bug with shortcut buttons that could make re-opening a set assign the buttons incorrectly; Curated parameter banks for some stock Live devices (not done); Use live.banks for Max for Live devices on Bluhand; Fix small bug in bluhand that was emitting errors into the console.
+- 2025-01-04 [v11](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v11/Knobbler4-v11.zip) - Fix bugs in Bluhand: 1) values would not sync unless the slider was touched 2) double-tap did not return to default; Implement `/syn` handler, responds with `/ack` to enable improved setup UI in the native app.
 - 2024-12-20 [v10](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v10/Knobbler4-v10.zip) - Fix a bug in Current Param Knob that displayed garbled value strings and sometimes led to a crash. Thanks @rds2024-3004 for reporting the bug!
 - 2024-12-04 [v9](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v9/Knobbler4-v9.zip) - Simplify main patch with a JS-based OSC router; Fix bug around button param vals; Fix CurrentParamKnob warnings when no param is selected; Bundle versioned TouchOSC template in the zip.
 - 2024-12-01 [v8](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v8/Knobbler4-v8.zip) - Fixes a bug that would affect recall if a track or device was moved.
@@ -26,111 +56,6 @@ Also provides a high-resolution slider that operates on the currently selected p
 - 2024-10-12 [v3](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v3/Knobbler4-v3.zip) - Fix bug related to slider 25 masquerading as slider 15; Typography refinement in the .tosc file; Consolidate back to a single `Knobbler4.tosc` file (Bluhand is back, baby!); Fix value display in Bluhand if the value was a bare number; Fix bug with changing devices in Bluhand if you were not on bank 1, the display would be incorrect. _NOTE: Use the Files app on the iPad to delete the `.tosc` files before updating with the new version from here._
 - 2024-09-22 [v2](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v2/Knobbler4-v2.zip) - Re-adds Bluhand functionality, double-tap a slider to return to the default value. Make sure you update the `.tosc` files on your iPad when downloading this update!
 - 2024-09-08 [v1](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v1/Knobbler4-v1.zip) - Initial release.
-
-## Installation
-
-### Requirements
-
-- Computer running Ableton Live 12
-- iPad or Android tablet running [TouchOSC](https://hexler.net/touchosc#get)
-
-### Steps
-
-1. Download the .zip file from the latest [release](https://github.com/zsteinkamp/m4l-Knobbler4/releases)
-1. Unzip the file
-1. Drag the `Knobbler4.amxd` file to Live's User Library
-1. Add Knobbler4 to a MIDI/Instrument track in your Live Set
-1. Copy the `Knobbler4.tosc` (or `Knobbler4-with-bluhand.tosc`) file to your iPad (e.g. with AirDrop)
-1. Configure TouchOSC on the iPad to talk OSC to your computer. (NOTE: If you want to connect over USB, see the [instructions here](USB.md).)
-   ![Ports](images/ports.png)
-   - In TouchOSC on the iPad, click the Chain icon in the toolbar
-   - Select "OSC" in the left-side menu
-   - Click "Browse" under Connection 1
-   - You should see your computer's hostname followed by "Knobbler4"
-   - Select that item, then select the IPv4 address in the sub-menu (e.g. 10.1.1.1:2346)
-     ![Connection Selection](images/touchosc-connect-1.png)
-   - Set the "Receive Port" to 2347. This is the port that TouchOSC on the iPad listens on.
-     ![Connection Selection](images/touchosc-connect-2.png)
-   - Press `Done` in the upper-right
-1. In the TouchOSC toolbar, press the "Play" (triangle) icon to toggle out of Editor mode.
-1. Back in Knobbler, click "Rescan Net".
-1. Your iPad should show up in the drop-down below. Select it, and you should be in business!
-   ![Select iPad](images/ipad-connect.png)
-
-_NOTE: You **MUST** have a control surface configured in Ableton Live. If you do, then you will see the "Blue Hand" icon in the title bar of the selected device._
-
-![Blue Hand Icon](images/blue-hand.png)
-
-If you do not see the Blue Hand, then you will need to set up a "dummy" control surface in order for the Bluhand portion of Knobbler to work. To do this, you can open the settings in Live and switch to the Link, Tempo & MIDI tab. Chooose any control surface from the list and assign its input to the IAC driver.
-
-![Control surface setup](images/control-surface-setup.png)
-
-If you do not have the IAC driver set up, then open the Audio & Midi Setup app, open the MIDI window, double click the IAC driver and make sure it is Online.
-
-![IAC Driver configuration](images/iac-driver.png)
-
-## Usage
-
-### Mapping Parameters
-
-1. Select any parameter in Ableton Live by clicking on it. A border or corners of a border will appear around the object, e.g. "Frequency" below...
-
-   <img alt="Selected Parameter" src="images/selected-param.png" style="width: 384"/>
-
-2. Touch any unmapped slider on the iPad screen.
-3. Voila!
-
-### Unmapping Parameters
-
-1. Touch the `X` icon in the upper-left corner of the iPad screen. The sliders will all turn into red rectangles.
-2. Touch a red rectangle to unmap the parameter.
-3. Touch the `X` icon again to leave unmapping mode.
-
-### Bluhand
-
-Ableton Live uses a blue hand icon to indicate which device is currently under control of a control surface.
-
-   <img alt="Selected device" src="images/bluhand-device.jpg" style="width: 384"/>
-
-If you use the `Knobbler4-with-Bluhand.tosc` TouchOSC layout on your iPad, then you can use the `Bluhand` tab to access all of the parameters the currently selected device offers.
-
-   <img alt="Device parameters on iPad" src="images/bluhand-ipad.jpg" style="width: 384"/>
-
-If the current device has more than 16 parameters, then you can use the `<<<` and `>>>` controls in the upper-right of the Bluhand tab to access different banks / pages of parameters.
-
-HOT TIP: You can assign a keystroke to a device. This lets you access all of a device's parameters on the iPad with a single keystroke. To do this:
-
-- Press Cmd-K
-- Select the device you want to assign
-- Press the key you want to use to focus that device
-  ![Key mapping](images/key-mapping.png)
-- Press Cmd-K to exit mapping mode
-  Now, with the iPad on the Bluhand tab, you can press a single key (e.g. "k" for your kickdrum) and access all of its parameters on the iPad.
-  ![Jump to device](images/key-device.jpg)
-
-NOTE: If you do not see the Blue Hand icon on the current device, then go to the Ableton Live settings and configure any control surface to connect any input port. You may need to configure an IAC MIDI port in the Audio MIDI Setup app if on a Mac.
-
-### Double-tap Default
-
-Double-tap any slider to return the parameter to its default value.
-
-### Jump to Track
-
-Tap a track name on one of the Knobbler tabs to navigate to that track in Live.
-
-### Current Param Slider
-
-Along the bottom of the iPad screen is a horizontal slider that is used to control the currently selected parameter in your Live Set. This parameter does not have to be mapped to a slider. You can use that slider to control the paramter with a high degree of accuracy.
-
-### Toggle Record Enable
-
-Recording automation is sometimes frustrating, especially in MIDI tracks since you cannot disable recording easily. I created this feature so that I could easily record and overdub automation without recording into or changing anything about MIDI clips.
-
-The Toggle Record Enable button gives you a way to easily disable and re-enable MIDI or audio recording in the currently selected track. The input settings are retained when recording is disabled.
-
-## OSC API
-
-Knobbler uses the standard OSC protocol to communicate between the Max for Live device and TouchOSC on your iPad or other tablet. If you would like to develop your own TouchOSC template, or create an alternative interface (e.g. hardware!) then have a look at the [OSC API specs here](./OSC-API.md).
 
 ## Development
 

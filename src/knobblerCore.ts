@@ -1,5 +1,18 @@
-import { debouncedTask, dequote, isValidPath, logFactory } from './utils'
-import { MAX_SLOTS, OUTLET_MSGS, OUTLET_OSC } from './consts'
+import {
+  colorToString,
+  debouncedTask,
+  dequote,
+  isValidPath,
+  logFactory,
+} from './utils'
+import {
+  DEFAULT_COLOR_FF,
+  MAX_SLOTS,
+  noFn,
+  nullString,
+  OUTLET_MSGS,
+  OUTLET_OSC,
+} from './consts'
 
 import config from './config'
 const log = logFactory(config)
@@ -7,6 +20,7 @@ const log = logFactory(config)
 // slot arrays
 const paramObj: LiveAPI[] = []
 const paramNameObj: LiveAPI[] = []
+const automationStateObj: LiveAPI[] = []
 const deviceObj: LiveAPI[] = []
 const trackObj: LiveAPI[] = []
 const parentNameObj: LiveAPI[] = []
@@ -14,10 +28,9 @@ const parentColorObj: LiveAPI[] = []
 const param: ParamType[] = []
 const outMin: number[] = []
 const outMax: number[] = []
-const deviceCheckerTask: Task[] = []
+const deviceCheckerTask: MaxTask[] = []
 
 // other vars
-const nullString = '- - -'
 const allowMapping: boolean[] = []
 const allowUpdateFromOsc: boolean[] = []
 
@@ -42,6 +55,11 @@ function clearPath(slot: number) {
   //log()
   init(slot)
   refreshSlotUI(slot)
+}
+
+function bkMap(slot: number, id: number) {
+  const api = new LiveAPI(noFn, 'id ' + id)
+  setPath(slot, api.unquotedpath)
 }
 
 function initAll() {
@@ -74,6 +92,7 @@ function init(slot: number) {
   }
   if (deviceCheckerTask[slot]) {
     deviceCheckerTask[slot].cancel()
+    deviceCheckerTask[slot].freepeer()
     deviceCheckerTask[slot] = null
   }
   if (paramNameObj[slot]) {
@@ -151,7 +170,7 @@ function paramValueCallback(slot: number, iargs: IArguments) {
   // This function is called whenever the parameter value changes,
   // either via OSC control or by changing the device directly.
   // We need to distinguish between the two and not do anything if the
-  // value was changed due to OSC input. Otherwise, since we would create a feedback
+  // value was changed due to OSC input. Otherwise, we would create a feedback
   // loop since this the purpose of this function is to update the displayed
   // value on the OSC controller to show automation or direct manipulation.
   // We accomplish this by keeping a timestamp of the last time OSC data was
@@ -177,6 +196,15 @@ function paramNameCallback(slot: number, iargs: IArguments) {
   if (args[0] === 'name') {
     param[slot].name = args[1]
     sendParamName(slot)
+  }
+}
+
+function automationStateCallback(slot: number, iargs: IArguments) {
+  //log(iargs)
+  const args = arrayfromargs(iargs)
+  //log('PARAM NAME CALLBACK ' + args.join(','))
+  if (args[0] === 'automation_state') {
+    sendAutomationState(slot)
   }
 }
 
@@ -210,26 +238,18 @@ function trackNameCallback(slot: number, iargs: IArguments) {
   }
 }
 
-function colorToString(colorVal: string) {
-  let retString = parseInt(colorVal).toString(16).toUpperCase()
-  const strlen = retString.length
-  for (let i = 0; i < 6 - strlen; i++) {
-    retString = '0' + retString
-  }
-  return retString + 'FF'
-}
-
 function parentColorCallback(slot: number, iargs: IArguments) {
   //log('PARENT COLOR CALLBACK')
   const args = arrayfromargs(iargs)
   //log('PARENTCOLOR', args)
   if (args[0] === 'color') {
-    param[slot].trackColor = colorToString(args[1])
+    param[slot].trackColor = colorToString(args[1]) + 'FF'
     sendColor(slot)
   }
 }
 
 function checkDevicePresent(slot: number) {
+  //log('CHECK_DEVICE_PRESENT ' + slot)
   if (deviceObj[slot] && !deviceObj[slot].unquotedpath) {
     //log(`slot=${slot} DEVICE DELETED`)
     init(slot)
@@ -253,22 +273,29 @@ function setPath(slot: number, paramPath: string) {
     //log(`skipping ${slot}: ${paramPath}`)
     return
   }
-  const testObj = new LiveAPI(
+  const testParamObj = new LiveAPI(
     (iargs: IArguments) => paramValueCallback(slot, iargs),
     paramPath
   )
-  testObj.property = 'value'
   // catch bad paths
-  if (testObj.id.toString() === '0') {
+  if (testParamObj.id === 0) {
     log(`Invalid path for slot ${slot}: ${paramPath}`)
     return
   }
-  paramObj[slot] = testObj
+  testParamObj.property = 'value'
+  paramObj[slot] = testParamObj
+
   paramNameObj[slot] = new LiveAPI(
     (iargs: IArguments) => paramNameCallback(slot, iargs),
     paramPath
   )
   paramNameObj[slot].property = 'name'
+
+  automationStateObj[slot] = new LiveAPI(
+    (iargs: IArguments) => automationStateCallback(slot, iargs),
+    paramPath
+  )
+  automationStateObj[slot].property = 'automation_state'
 
   param[slot].id = paramObj[slot].id
   param[slot].path = paramObj[slot].unquotedpath
@@ -279,17 +306,18 @@ function setPath(slot: number, paramPath: string) {
 
   deviceObj[slot] = new LiveAPI(
     (iargs: IArguments) => deviceNameCallback(slot, iargs),
-    paramObj[slot].get('canonical_parent')
+    paramObj[slot] && paramObj[slot].get('canonical_parent')
   )
-
   const devicePath = deviceObj[slot].unquotedpath
 
   // poll to see if the mapped device is still present
   if (deviceCheckerTask[slot] && deviceCheckerTask[slot].cancel) {
     deviceCheckerTask[slot].cancel()
+    deviceCheckerTask[slot].freepeer()
     deviceCheckerTask[slot] = null
   }
-  deviceCheckerTask[slot] = new Task(() => checkDevicePresent(slot))
+  deviceCheckerTask[slot] = new Task(() => checkDevicePresent(slot)) as MaxTask
+  deviceCheckerTask[slot].interval = 1000 // every second
   deviceCheckerTask[slot].repeat(-1)
 
   // Only get the device name if it has the name property
@@ -316,7 +344,8 @@ function setPath(slot: number, paramPath: string) {
     parentId
   )
   parentColorObj[slot].property = 'color'
-  param[slot].trackColor = colorToString(parentColorObj[slot].get('color'))
+  param[slot].trackColor =
+    colorToString(parentColorObj[slot].get('color')) + 'FF'
 
   // Try to get the track name
   const matches =
@@ -347,7 +376,8 @@ function setPath(slot: number, paramPath: string) {
 }
 
 function refresh() {
-  for (let i = 0; i < MAX_SLOTS; i++) {
+  //log('IN REFRESH')
+  for (let i = 1; i <= MAX_SLOTS; i++) {
     refreshSlotUI(i)
   }
 }
@@ -360,6 +390,7 @@ function refreshSlotUI(slot: number) {
 function sendNames(slot: number) {
   //log(param.name, param.deviceName, param.trackName)
   sendParamName(slot)
+  sendAutomationState(slot)
   sendDeviceName(slot)
   sendTrackName(slot)
   sendColor(slot)
@@ -377,6 +408,16 @@ function sendParamName(slot: number) {
   sendMsg(slot, ['param', paramName])
   //log('SEND PARAM NAME ' + slot + '=' + paramName)
   outlet(OUTLET_OSC, ['/param' + slot, paramName])
+}
+
+function sendAutomationState(slot: number) {
+  initSlotIfNecessary(slot)
+  const automationState = parseInt(
+    (paramObj && paramObj[slot] && paramObj[slot].get('automation_state')) || 0
+  )
+  const payload = ['/param' + slot + 'auto', automationState]
+  //log('PAYLOAD ' + JSON.stringify(payload))
+  outlet(OUTLET_OSC, payload)
 }
 
 function sendDeviceName(slot: number) {
@@ -399,25 +440,22 @@ function sendTrackName(slot: number) {
   outlet(OUTLET_OSC, ['/track' + slot, trackName])
 }
 
-const DEFAULT_RED = 'FF0000FF'
-
 function sendColor(slot: number) {
   //log(`SEND COLOR ${slot}`)
   initSlotIfNecessary(slot)
   let trackColor = param[slot].trackColor
     ? dequote(param[slot].trackColor.toString())
-    : DEFAULT_RED
+    : DEFAULT_COLOR_FF
   outlet(OUTLET_OSC, ['/val' + slot + 'color', trackColor])
 
-  if (trackColor === DEFAULT_RED) {
+  // for the color highlight in the Max for Live device
+  if (trackColor === DEFAULT_COLOR_FF) {
     trackColor = '000000FF'
   }
-
   const red = parseInt(trackColor.substring(0, 2), 16) / 255.0 || 0
   const grn = parseInt(trackColor.substring(2, 4), 16) / 255.0 || 0
   const blu = parseInt(trackColor.substring(4, 6), 16) / 255.0 || 0
   const alp = parseInt(trackColor.substring(6, 8), 16) / 255.0 || 0
-
   sendMsg(slot, ['color', red, grn, blu, alp])
 }
 
@@ -427,7 +465,7 @@ function sendVal(slot: number) {
 
   if (
     !paramObj[slot] ||
-    paramObj[slot].id.toString() === '0' ||
+    paramObj[slot].id === 0 ||
     param[slot].val === undefined ||
     param[slot].max === undefined ||
     param[slot].min === undefined ||
@@ -459,10 +497,12 @@ function sendVal(slot: number) {
   ])
 }
 
+// new value received over OSC
 function val(slot: number, val: number) {
   //log(slot + ' - VAL: ' + val)
   if (paramObj[slot]) {
     if (allowUpdateFromOsc[slot]) {
+      // scale the 0..1 value to the param's min/max range
       const scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot]
       param[slot].val =
         (param[slot].max - param[slot].min) * scaledVal + param[slot].min
@@ -475,7 +515,7 @@ function val(slot: number, val: number) {
         })
         debouncedTask('allowUpdates', slot, allowUpdatesTask, 500)
       }
-
+      //log('VAL ' + paramObj[slot] + ' ' + param[slot].val)
       paramObj[slot].set('value', param[slot].val)
       outlet(OUTLET_OSC, [
         '/valStr' + slot,
@@ -526,6 +566,7 @@ function val(slot: number, val: number) {
 const module = {}
 
 export {
+  bkMap,
   clearCustomName,
   clearPath,
   gotoTrackFor,
